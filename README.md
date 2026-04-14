@@ -1,3 +1,3 @@
 ## Getting Started
 
-Instacart clone to see how making a simple distance based router app works
+app made to see how instacart handles dispatching and order handling
