@@ -1,70 +1,70 @@
+import "dotenv/config";
 import express from "express";
+import { dispatchOrder } from "./dispatch";
+import { saveOrder, getOrder } from "./db/orders";
+import type { Order } from "./types";
+import { enqueueOrder } from "./queue";
 
 const app = express();
-
-const port = 3001;
+const port = Number(process.env.PORT ?? 3001);
 
 app.use(express.json());
 
-app.get("/", (req: any, res: any) => {
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
+app.get("/", (_req, res) => {
   res.send("Server is running!");
 });
 
-app.get("/api", (req: any, res: any) => {
+app.get("/api", (_req, res) => {
   res.json({ message: "Success" });
 });
 
-app.listen(port, () => {
-  console.log(`API listening at port: {port}`);
-});
-
-//post to call an order when it comes
-app.post("/order", (req, res) => {
-  //create a new order
-  const order: Order = { id: Date.now(), status: "pending" };
-  orders.push(order);
-  //dispatch it
-  dispatchOrder(order);
-
-  res.status(200).send(`Order is successfuly now ${order.status}!`);
-});
-
-interface Driver {
-  id: number;
-  available: boolean;
-}
-
-interface Order {
-  id: number;
-  status: OrderStatus;
-}
-
-type OrderStatus = "pending" | "assigned" | "completed";
-
-let drivers: Driver[] = [];
-let orders: Order[] = [];
-
-//push a sample order in it
-drivers.push({ id: 1, available: true });
-orders.push({ id: 1, status: "pending" });
-
-//check for available driver
-function findAvailableDriver() {
-  const driver = drivers.find((driver) => driver.available === true);
-
-  return driver;
-}
-
-//dispatch the order we made
-function dispatchOrder(order: Order) {
-  //find a driver for the order
-  let driver = findAvailableDriver();
-  if (driver) {
-    //update driver
-    driver.available = false;
-    //update order
-    order.status = "assigned";
+app.get("/order/:orderId", async (req, res) => {
+  try {
+    const order = await getOrder(req.params.orderId);
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+    res.json(order);
+  } catch (error) {
+    console.error("GET /order failed:", error);
+    res.status(500).json({ error: "Failed to fetch order" });
   }
-}
+});
+
+app.post("/order", async (req, res) => {
+  try {
+    const customerName = req.body?.customerName ?? "Guest";
+
+    const order: Order = {
+      orderId: String(Date.now()),
+      status: "pending",
+      customerName,
+      createdAt: new Date().toISOString(),
+    };
+
+    //save order to database
+    await saveOrder(order);
+    //enqueue order to SQS queue
+    await enqueueOrder(order.orderId);
+    //return order
+    res.json(order);
+  
+  } catch (error) {
+    console.error("POST /order failed:", error);
+    res.status(500).json({ error: "Failed to create order" });
+  }
+});
+
+app.listen(port, () => {
+  console.log(`API listening at port: ${port}`);
+});
 
 export default app;

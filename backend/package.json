@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "start": "tsx api.ts",
+    "setup:aws": "tsx scripts/setup-aws.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -11,6 +12,10 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1106.0",
+    "@aws-sdk/client-sqs": "^3.1107.0",
+    "@aws-sdk/lib-dynamodb": "^3.1106.0",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1"
   },
   "devDependencies": {
