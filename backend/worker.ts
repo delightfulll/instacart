@@ -3,10 +3,11 @@ import "dotenv/config";
 import { SQSClient, ReceiveMessageCommand, DeleteMessageCommand, Message } from "@aws-sdk/client-sqs";
 import { dispatchOrder } from "./dispatch";
 import { getOrder } from "./db/orders";
+import { notifyOrderStatus } from "./notify";
 
 const client = new SQSClient({region: process.env.AWS_REGION ?? "us-east-1"});
 
-console.log("Worker started — polling SQS every ~20s (this wait is normal)");
+console.log("Worker started polling SQS...");
 
 async function processMessage(message: Message): Promise<void> {
     const data = JSON.parse(message.Body ?? "{}");
@@ -22,10 +23,18 @@ async function processMessage(message: Message): Promise<void> {
     const dispatched = await dispatchOrder(order);
     console.log("Dispatched order:", orderid, "status:", dispatched.status);
 
+    //if dispatched, send a notificaton via email with SNS
+    if (dispatched.status === "assigned" && dispatched.driverId){
+        await notifyOrderStatus(orderid, dispatched.driverId)
+    }
+
+
     const deleteMessageCommand = new DeleteMessageCommand({
         QueueUrl: process.env.SQS_QUEUE_URL,
         ReceiptHandle: message.ReceiptHandle,
     });
+
+    //use await for async work
     await client.send(deleteMessageCommand);
     console.log("Deleted message from queue");
 }

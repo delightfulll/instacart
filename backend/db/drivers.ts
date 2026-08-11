@@ -1,4 +1,4 @@
-import { PutCommand, ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { PutCommand, ScanCommand, UpdateCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { docClient, DRIVERS_TABLE } from "./client";
 import type { Driver } from "../types";
 
@@ -23,6 +23,17 @@ export async function findAvailableDriver(): Promise<Driver | null> {
 
   const driver = result.Items?.[0] as Driver | undefined;
   return driver ?? null;
+}
+
+export async function getDriver(driverId: string): Promise<Driver | null> {
+  const result = await docClient.send(
+    new GetCommand({
+      TableName: DRIVERS_TABLE,
+      Key: { driverId },
+    })
+  );
+
+  return (result.Item as Driver) ?? null;
 }
 
 export async function setDriverAvailability(
