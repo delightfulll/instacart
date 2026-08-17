@@ -14,29 +14,34 @@ async function processMessage(message: Message): Promise<void> {
     const orderid = data.orderId;
     console.log("Processing order:", orderid);
 
+    //getting the order object from the dynamoDB table
     const order = await getOrder(orderid);
     if (!order) {
         console.error("Order ID not found in message", message);
         return;
     }
 
+    //after retreiving the order via the orderID, dispatch the order
     const dispatched = await dispatchOrder(order);
-    console.log("Dispatched order:", orderid, "status:", dispatched.status);
+    console.log("Dispatching order:", orderid, "status:", dispatched.status);
 
     //if dispatched, send a notificaton via email with SNS
     if (dispatched.status === "assigned" && dispatched.driverId){
+        //send a message via SNS that it has found a driver
         await notifyOrderStatus(orderid, dispatched.driverId)
-    }
-
-
-    const deleteMessageCommand = new DeleteMessageCommand({
+        //deletes the message only if the if order is assigned
+        const deleteMessageCommand = new DeleteMessageCommand({
         QueueUrl: process.env.SQS_QUEUE_URL,
         ReceiptHandle: message.ReceiptHandle,
-    });
 
+        
+    });
     //use await for async work
     await client.send(deleteMessageCommand);
-    console.log("Deleted message from queue");
+    console.log("Deleted message from queue since dispatched");
+    } else {
+        console.log("Order not dispatched, no driver available sending back into queue")
+    }
 }
 
 

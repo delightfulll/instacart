@@ -17,7 +17,7 @@ export async function findAvailableDriver(): Promise<Driver | null> {
       TableName: DRIVERS_TABLE,
       FilterExpression: "available = :available",
       ExpressionAttributeValues: { ":available": true },
-      Limit: 1,
+      Limit: 2,
     })
   );
 
@@ -33,9 +33,15 @@ export async function getDriver(driverId: string): Promise<Driver | null> {
     })
   );
 
-  return (result.Item as Driver) ?? null;
+  // You want to return the driver object if it exists, or null otherwise.
+  // The DynamoDB result is in result.Item, so coerce/cast it to Driver type if present.
+  if (result.Item) {
+    return result.Item as Driver;
+  }
+  return null;
 }
 
+//updates the driver in dynamoDB
 export async function setDriverAvailability(
   driverId: string,
   available: boolean

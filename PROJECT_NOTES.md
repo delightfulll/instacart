@@ -6,16 +6,35 @@
 
 ## Learning mode (IMPORTANT — follow this)
 
-**Option B — user writes code, AI guides.**
+**Option B+ — English first, then code.**
 
-- Explain concepts in plain English first (WHAT → WHERE → HOW → WIRE)
-- User types the code; AI reviews and hints — **do NOT dump full file solutions**
-- User does AWS Console steps themselves (AI gives step-by-step, user clicks)
-- One tiny step at a time — not "build Phase 2" all at once
-- If user is stuck >10 min on HOW, give a 5-line snippet + doc link, not 200 lines
+1. **English plan** — User describes WHAT happens step-by-step in plain English (no code)
+2. **AI checks plan** — Correct gaps, ask clarifying questions
+3. **User writes code** — Translate one step at a time
+4. **AI reviews** — Explain mistakes, don't dump full files
+
+Additional rules:
+- Explain AWS concepts in plain English (WHAT → WHERE → HOW → WIRE)
+- User does AWS Console steps themselves (AI guides, user clicks)
+- One tiny step at a time
+- If stuck >10 min on HOW → 5-line snippet + doc link, not 200 lines
 - Checkpoint questions before moving on
-- User is studying for **AWS SAA** — tie concepts to exam when relevant
-- User is **not a strong coder yet** — prefer clear long-form code over clever shortcuts (`??`, destructuring optional)
+- User studying for **AWS SAA** — tie to exam when relevant
+- Prefer clear code over clever shortcuts (`??`, destructuring optional)
+- **Before any new feature: user thinks in English first — do NOT jump to code**
+
+### English-first template (user fills in before coding)
+
+```
+WHAT:  What should happen from the user's perspective?
+WHEN:  What triggers this?
+STEPS: Number each step — who does what (browser, API, DynamoDB, SQS, worker, SNS)
+DATA:  What info passes between steps? (orderId, driverId, etc.)
+FAIL:  What if something goes wrong at each step?
+WHERE: Which file handles each step? (guess is OK)
+```
+
+AI reviews plan → user codes one step → AI reviews → next step.
 
 ---
 
