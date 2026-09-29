@@ -39,11 +39,23 @@ export default function DriverHome() {
         <h1 className="mb-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
           Available Orders
         </h1>
-        <ul>
-          {orders.map((order) => (
-            <li key={order.orderId}>{order.orderId}</li>
-          ))}
-        </ul>
+        {orders.length === 0 ? (
+          <p className="text-sm text-zinc-500">No pending orders right now.</p>
+        ) : (
+          <ul className="space-y-2">
+            {orders.map((order) => (
+              <li
+                key={order.orderId}
+                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-800 dark:border-zinc-800 dark:text-zinc-200"
+              >
+                <p className="font-medium">{order.orderId}</p>
+                {order.customerName && (
+                  <p className="text-zinc-500">{order.customerName}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </main>
     </div>
   );

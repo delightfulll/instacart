@@ -40,21 +40,13 @@ app.get("/order/:orderId", async (req, res) => {
 });
 
 
-//
-app.get("/driver/orders", async (req, res) => {
+app.get("/driver/orders", async (_req, res) => {
   try {
-    //this returns an array
-    const orders = await getPendingOrders()
-    if (orders.length === 0){
-      return res.status(404).json({ error: "there are no orders" });
-    }
-
-    //just print for now
-    console.log(orders)
-  }
-  //errors
-  catch(error){
-    console.error("getting orders failed")
+    const orders = await getPendingOrders();
+    res.json(orders);
+  } catch (error) {
+    console.error("GET /driver/orders failed:", error);
+    res.status(500).json({ error: "Failed to fetch orders" });
   }
 });
 
