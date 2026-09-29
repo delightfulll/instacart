@@ -27,7 +27,7 @@ pipeline {
       steps {
         sh '''
           docker buildx build \
-            --platform linux/arm64 \
+            --platform linux/amd64 \
             --provenance=false \
             --sbom=false \
             --push \
@@ -74,6 +74,11 @@ with open("task-def.json") as f:
 for container in td["containerDefinitions"]:
     if repo in container.get("image", ""):
         container["image"] = image
+
+td["runtimePlatform"] = {
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX",
+}
 
 for key in (
     "taskDefinitionArn",
