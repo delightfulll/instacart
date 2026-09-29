@@ -9,6 +9,7 @@ export async function dispatchOrder(order: Order): Promise<Order> {
     return order;
   }
 
+  //update the driver (call the fucntion)
   await setDriverAvailability(driver.driverId, false);
 
   const updated = await updateOrderStatus(
@@ -19,3 +20,6 @@ export async function dispatchOrder(order: Order): Promise<Order> {
 
   return updated ?? { ...order, status: "assigned", driverId: driver.driverId };
 }
+
+
+

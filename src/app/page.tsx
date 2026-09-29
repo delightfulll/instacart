@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 // WHAT: shape of the order JSON our backend returns
@@ -43,7 +44,7 @@ export default function Home() {
         throw new Error(
           [data.error ?? `Request failed: ${response.status}`, details, hint]
             .filter(Boolean)
-            .join(" — ")
+            .join(" — "),
         );
       }
 
@@ -51,11 +52,11 @@ export default function Home() {
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") {
         setError(
-          "Request timed out. Is the backend running on port 3001? Did you run `npm run setup:aws`?"
+          "Request timed out. Is the backend running on port 3001? Did you run `npm run setup:aws`?",
         );
       } else if (err instanceof TypeError) {
         setError(
-          "Cannot reach backend at http://localhost:3001. Start it with: cd backend && npm start"
+          "Cannot reach backend at http://localhost:3001. Start it with: cd backend && npm start",
         );
       } else {
         setError(err instanceof Error ? err.message : "Something went wrong");
@@ -69,6 +70,12 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-4 font-sans dark:bg-black">
       <main className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+        <Link
+          href="/driver"
+          className="mb-4 inline-block text-sm text-green-700 hover:underline dark:text-green-400"
+        >
+          Driver view
+        </Link>
         <h1 className="mb-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
           Place an Order
         </h1>

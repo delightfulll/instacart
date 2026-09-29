@@ -44,18 +44,21 @@ Learn **applied AWS engineering** by building an Instacart-style order dispatch 
 
 ---
 
-## Current status (last updated: Aug 2026)
+## Current status (last updated: Aug 31, 2026)
 
 ### Done
 - [x] **Phase 1a** — Next.js frontend calls Express `POST /order` via `fetch`
 - [x] **Phase 1b** — DynamoDB persistence (`instacart-orders`, `instacart-drivers`)
-- [x] **Phase 2 (partial)** — SQS enqueue on order create + worker polls and dispatches
-- [x] **SNS** — `notify.ts` publishes when order assigned (email subscription tested)
+- [x] **Phase 2** — SQS enqueue + worker polls and dispatches; delete SQS message only on assign
+- [x] **SNS** — `notify.ts` publishes when order assigned
+- [x] **Docker** — `backend/Dockerfile`, one image, `CMD npm start`
+- [x] **ECS Fargate** — API + worker as **two services**, **one ECR image** (`instacart-api`)
 
 ### Not done yet
-- [ ] Fix worker to only delete SQS message on successful dispatch (or DLQ)
+- [ ] Stable API URL (ALB) — Fargate public IP changes every task restart
+- [ ] Frontend on AWS (or at least `NEXT_PUBLIC_API_URL` → ECS IP/`http://IP:3001`)
 - [ ] **Phase 3** — Cognito auth
-- [ ] **Phase 4** — EC2 deploy, then ECS, microservices split, CDK
+- [ ] DLQ, CDK, microservices split
 
 ---
 
@@ -63,19 +66,24 @@ Learn **applied AWS engineering** by building an Instacart-style order dispatch 
 
 ```
 Browser (localhost:3000, Next.js)
-  → POST /order
-    → Express API (localhost:3001, backend/api.ts)
-      → saveOrder()        → DynamoDB instacart-orders
-      → enqueueOrder()     → SQS order-dispatch-queue
-      ← returns order (status: "pending")
+  → POST /order  (NEXT_PUBLIC_API_URL = http://PUBLIC_IP:3001)
+    → ECS Fargate service "api"  (CMD npm start, port 3001)
+      → DynamoDB  instacart-orders
+      → SQS       order-dispatch-queue
+      ← status: pending
 
-Worker (backend/worker.ts, separate process)
-  → poll SQS (WaitTimeSeconds: 20 — looks "stuck" but is normal)
-  → getOrder(orderId)      → DynamoDB
-  → dispatchOrder()        → assign driver, update both tables
-  → notifyOrderStatus()    → SNS email/notification
-  → DeleteMessage          → removes from queue (even if dispatch fails — known bug)
+ECS Fargate service "worker"  (command override: npx tsx worker.ts)
+  → poll SQS
+  → DynamoDB dispatch
+  → SNS notify
+  → DeleteMessage only if assigned
 ```
+
+**Same ECR image, two task defs.** Worker Command is NOT bare `tsx` (Node image prepends `node` → Cannot find module '/app/tsx'). Use `npx,tsx,worker.ts` or `/app/node_modules/.bin/tsx,worker.ts`.
+
+**IAM:** execution role (ECR/logs) vs task role (DDB+SQS+SNS). Shared task role is fine for learning.
+
+**SG:** inbound TCP 3001 from My IP on the **API** service only. Worker needs no inbound 3001.
 
 ---
 

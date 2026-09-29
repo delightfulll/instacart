@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import { dispatchOrder } from "./dispatch";
-import { saveOrder, getOrder } from "./db/orders";
+import { saveOrder, getOrder, getPendingOrders } from "./db/orders";
 import type { Order } from "./types";
 import { enqueueOrder } from "./queue";
 
@@ -39,6 +39,25 @@ app.get("/order/:orderId", async (req, res) => {
   }
 });
 
+
+//
+app.get("/driver/orders", async (req, res) => {
+  try {
+    //this returns an array
+    const orders = await getPendingOrders()
+    if (orders.length === 0){
+      return res.status(404).json({ error: "there are no orders" });
+    }
+
+    //just print for now
+    console.log(orders)
+  }
+  //errors
+  catch(error){
+    console.error("getting orders failed")
+  }
+});
+
 app.post("/order", async (req, res) => {
   try {
     const customerName = req.body?.customerName ?? "Guest";
@@ -62,6 +81,8 @@ app.post("/order", async (req, res) => {
     res.status(500).json({ error: "Failed to create order" });
   }
 });
+
+
 
 app.listen(port, () => {
   console.log(`API listening at port: ${port}`);
