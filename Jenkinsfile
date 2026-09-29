@@ -25,7 +25,7 @@ pipeline {
 
     stage('Build') {
       steps {
-        sh 'docker build -t $IMAGE:$BUILD_NUMBER -t $IMAGE:latest backend'
+        sh 'docker build --platform linux/amd64 -t $IMAGE:$BUILD_NUMBER -t $IMAGE:latest backend'
       }
     }
 
