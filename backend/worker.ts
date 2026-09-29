@@ -1,3 +1,4 @@
+//new code change to test jenkins pipeline
 import "dotenv/config";
 
 import { SQSClient, ReceiveMessageCommand, DeleteMessageCommand, Message } from "@aws-sdk/client-sqs";
