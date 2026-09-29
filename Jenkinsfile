@@ -25,14 +25,22 @@ pipeline {
 
     stage('Build') {
       steps {
-        sh 'docker build --platform linux/amd64 -t $IMAGE:$BUILD_NUMBER -t $IMAGE:latest backend'
+        sh '''
+          docker buildx build \
+            --platform linux/arm64 \
+            --provenance=false \
+            --sbom=false \
+            --push \
+            -t $IMAGE:$BUILD_NUMBER \
+            -t $IMAGE:latest \
+            backend
+        '''
       }
     }
 
     stage('Push') {
       steps {
-        sh 'docker push $IMAGE:$BUILD_NUMBER'
-        sh 'docker push $IMAGE:latest'
+        sh 'docker buildx imagetools inspect $IMAGE:$BUILD_NUMBER'
       }
     }
 

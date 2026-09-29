@@ -1,5 +1,5 @@
 # buld then run the dockerfile
-FROM node:22-alpine
+FROM --platform=linux/arm64 node:22-alpine
 
 # starting witn a clean directory
 WORKDIR /app
