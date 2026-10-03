@@ -11,19 +11,19 @@ pipeline {
   }
 
   stages {
-    stage('Checkout') {
+    stage('Checkout') { // pull this repo on the Jenkins agent
       steps {
         checkout scm
       }
     }
 
-    stage('Login to ECR') {
+    stage('Login to ECR') { // docker needs this before it can push the API image
       steps {
         sh 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY'
       }
     }
 
-    stage('Build') {
+    stage('Build') { // build the backend image for linux/amd64 and push it
       steps {
         sh '''
           docker buildx build \
@@ -38,13 +38,13 @@ pipeline {
       }
     }
 
-    stage('Push') {
+    stage('Push') { // confirm the tag exists in ECR. The build stage already pushed it.
       steps {
         sh 'docker buildx imagetools inspect $IMAGE:$BUILD_NUMBER'
       }
     }
 
-    stage('Deploy to ECS') {
+    stage('Deploy to ECS') { // point the running service at the new image and start new tasks
       steps {
         sh '''
           set -euo pipefail
@@ -63,6 +63,7 @@ pipeline {
             --output json > task-def.json
 
           python3 - <<'PY'
+# Copy the live task definition, swap in this build's image, drop fields register-task-definition rejects.
 import json, os
 
 image = os.environ["IMAGE"] + ":" + os.environ["BUILD_NUMBER"]

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 
-// WHAT: shape of the order JSON our backend returns
 type Order = {
   orderId: string;
   status: string;
@@ -11,21 +10,21 @@ type Order = {
   driverId?: string;
 };
 
+// Customer page. Places an order, then shows the id the API saved.
 export default function Home() {
-  // WHERE: state lives here so React re-renders when values change
   const [customerName, setCustomerName] = useState("");
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // WHAT: when user clicks Place Order, POST to backend and show result
+  // POST /order saves the row and puts it on the dispatch queue. Status comes back as pending.
   async function handlePlaceOrder() {
     setError("");
     setLoading(true);
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12_000);
+    const timeout = setTimeout(() => controller.abort(), 12_000); // don't hang the button if the API is down
 
     try {
       const response = await fetch(`${apiUrl}/order`, {
@@ -80,7 +79,7 @@ export default function Home() {
           Place an Order
         </h1>
         <p className="mb-6 text-sm text-zinc-500">
-          Frontend → backend (3001) → DynamoDB. Backend must be running.
+          Frontend → API (3001) → DynamoDB and the dispatch queue. API and worker must be running.
         </p>
 
         <label className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">

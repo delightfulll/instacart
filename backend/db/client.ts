@@ -4,6 +4,7 @@ import { NodeHttpHandler } from "@smithy/node-http-handler";
 
 const region = process.env.AWS_REGION ?? "us-east-1";
 
+// Shared by orders.ts and drivers.ts. Timeouts fail a stuck call instead of hanging the API.
 const client = new DynamoDBClient({
   region,
   requestHandler: new NodeHttpHandler({
@@ -12,7 +13,7 @@ const client = new DynamoDBClient({
   }),
 });
 
-export const docClient = DynamoDBDocumentClient.from(client);
+export const docClient = DynamoDBDocumentClient.from(client); // plain JS objects in, plain JS objects out
 
 export const ORDERS_TABLE = process.env.ORDERS_TABLE ?? "instacart-orders";
 export const DRIVERS_TABLE = process.env.DRIVERS_TABLE ?? "instacart-drivers";

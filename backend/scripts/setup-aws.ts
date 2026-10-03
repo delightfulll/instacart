@@ -14,6 +14,7 @@ const client = new DynamoDBClient({ region });
 const ORDERS_TABLE = process.env.ORDERS_TABLE ?? "instacart-orders";
 const DRIVERS_TABLE = process.env.DRIVERS_TABLE ?? "instacart-drivers";
 
+// Polls until DynamoDB reports the table as ACTIVE.
 async function waitForTableActive(name: string) {
   for (let attempt = 0; attempt < 30; attempt++) {
     const result = await client.send(new DescribeTableCommand({ TableName: name }));
@@ -26,6 +27,7 @@ async function waitForTableActive(name: string) {
   throw new Error(`Timed out waiting for table: ${name}`);
 }
 
+// Creates the table if it does not exist, then waits until it is ready.
 async function ensureTable(name: string, keyName: string) {
   try {
     await client.send(new DescribeTableCommand({ TableName: name }));
@@ -57,20 +59,29 @@ async function ensureTable(name: string, keyName: string) {
   await waitForTableActive(name);
 }
 
-async function seedDriver() {
+// Inserts the two drivers the app offers orders to.
+async function seedDrivers() {
   await saveDriver({
     driverId: "driver-1",
     name: "Alex",
     available: true,
+    online: false,
   });
-  console.log("Seeded driver: driver-1 (Alex)");
+  await saveDriver({
+    driverId: "driver-2",
+    name: "Jordan",
+    available: true,
+    online: false,
+  });
+  console.log("Seeded drivers: driver-1 (Alex), driver-2 (Jordan)");
 }
 
+// Creates both tables and seeds the drivers.
 async function main() {
   console.log(`Using region: ${region}`);
   await ensureTable(ORDERS_TABLE, "orderId");
   await ensureTable(DRIVERS_TABLE, "driverId");
-  await seedDriver();
+  await seedDrivers();
   console.log("Setup complete.");
 }
 
