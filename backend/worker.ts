@@ -12,12 +12,12 @@ import {
 const client = new SQSClient({ region: process.env.AWS_REGION ?? "us-east-1" });
 
 // Long-polls one queue and hides the message for 60s if one arrives.
-async function receiveOne(queueUrl: string): Promise<Message | null> {
+async function receiveOne(queueUrl: string, waitSeconds: number): Promise<Message | null> {
   const result = await client.send(
     new ReceiveMessageCommand({
       QueueUrl: queueUrl,
       MaxNumberOfMessages: 1,
-      WaitTimeSeconds: 10, // long poll; returns nothing if the queue stays empty
+      WaitTimeSeconds: waitSeconds, // short long-poll, so we flip back to the passed queue quickly
       VisibilityTimeout: OFFER_VISIBILITY_SECONDS, // hide it so a second receive can't offer it twice
     })
   );
@@ -70,13 +70,13 @@ async function readMessagesFromSQS(): Promise<void> {
   console.log("Worker offering orders from the passed queue first, then the dispatch queue");
 
   while (true) {
-    const passed = await receiveOne(passedUrl); // a deny lands here, so it jumps ahead of new orders
+    const passed = await receiveOne(passedUrl, 1); // a deny lands here, so it jumps ahead of new orders
     if (passed) {
       await processMessage(passed, passedUrl);
       continue;
     }
 
-    const dispatched = await receiveOne(dispatchUrl);
+    const dispatched = await receiveOne(dispatchUrl, 2); // was 10s, which delayed a deny sitting in the passed queue
     if (dispatched) {
       await processMessage(dispatched, dispatchUrl);
     }

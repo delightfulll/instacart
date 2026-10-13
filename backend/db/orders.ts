@@ -171,7 +171,7 @@ export async function declineOffer(orderId: string, driverId: string): Promise<O
 }
 
 // Stops the order after every seeded driver has denied it.
-export async function markUnassigned(orderId: string): Promise<void> {
+export async function markUnassigned(orderId: string): Promise<void> { 
   await docClient.send(
     new UpdateCommand({
       TableName: ORDERS_TABLE,

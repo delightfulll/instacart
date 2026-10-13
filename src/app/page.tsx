@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import { AppShell } from "../components/AppShell";
 
 type Order = {
   orderId: string;
@@ -67,60 +67,43 @@ export default function Home() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-4 font-sans dark:bg-black">
-      <main className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-        <Link
-          href="/driver"
-          className="mb-4 inline-block text-sm text-green-700 hover:underline dark:text-green-400"
-        >
-          Driver view
-        </Link>
-        <h1 className="mb-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-          Place an Order
-        </h1>
-        <p className="mb-6 text-sm text-zinc-500">
-          Frontend → API (3001) → DynamoDB and the dispatch queue. API and worker must be running.
+    <AppShell>
+      <section className="rounded-3xl border border-line bg-white p-6 shadow-sm">
+        <p className="text-sm font-semibold text-carrot">Delivery</p>
+        <h1 className="mt-1 text-3xl font-bold tracking-tight">Place an order</h1>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          Enter your name and we&apos;ll send the order out for a driver.
         </p>
 
-        <label className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Your name
-        </label>
+        <label className="mt-6 mb-2 block text-sm font-semibold">Your name</label>
         <input
           type="text"
           value={customerName}
           onChange={(e) => setCustomerName(e.target.value)}
           placeholder="Vinay"
-          className="mb-4 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 outline-none focus:border-green-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+          className="w-full rounded-xl border border-line bg-white px-3.5 py-3 text-foreground outline-none placeholder:text-[#B0B3B8] focus:border-ic-green focus:ring-2 focus:ring-[#0AAD0A]/20"
         />
 
         <button
           onClick={handlePlaceOrder}
           disabled={loading || !customerName.trim()}
-          className="w-full rounded-lg bg-green-600 py-2.5 font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-4 w-full rounded-full bg-ic-green py-3 font-semibold text-white hover:bg-ic-green-dark disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? "Placing order..." : "Place Order"}
+          {loading ? "Placing order..." : "Place order"}
         </button>
 
         {error && (
-          <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
-            {error}
-          </p>
+          <p className="mt-4 rounded-2xl bg-red-50 p-3 text-sm text-red-700">{error}</p>
         )}
 
         {order && (
-          <div className="mt-4 rounded-lg bg-green-50 p-4 text-sm dark:bg-green-950">
-            <p className="font-medium text-green-800 dark:text-green-200">
-              Order placed!
-            </p>
-            <p className="mt-1 text-green-700 dark:text-green-300">
-              ID: {order.orderId}
-            </p>
-            <p className="text-green-700 dark:text-green-300">
-              Status: {order.status}
-            </p>
+          <div className="mt-4 rounded-2xl bg-[#E7F6E7] p-4 text-sm">
+            <p className="font-semibold text-ic-green-dark">Order placed</p>
+            <p className="mt-1 text-foreground">ID {order.orderId}</p>
+            <p className="capitalize text-muted">Status: {order.status}</p>
           </div>
         )}
-      </main>
-    </div>
+      </section>
+    </AppShell>
   );
 }

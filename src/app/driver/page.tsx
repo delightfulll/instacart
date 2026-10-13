@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { AppShell } from "../../components/AppShell";
 
 type Order = {
   orderId: string;
@@ -15,7 +15,12 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 async function readJson(response: Response) {
   const text = await response.text();
   try {
-    return JSON.parse(text) as { error?: string; order?: Order | null; orderId?: string; status?: string };
+    return JSON.parse(text) as {
+      error?: string;
+      order?: Order | null;
+      orderId?: string;
+      status?: string;
+    };
   } catch {
     throw new Error(
       "The API returned a page instead of JSON. Point NEXT_PUBLIC_API_URL at the local API on port 3001 and restart the frontend.",
@@ -39,7 +44,8 @@ export default function DriverHome() {
 
     let cancelled = false;
 
-    async function tick() { // one poll of GET /driver/offer
+    async function tick() {
+      // one poll of GET /driver/offer
       const generation = pollGeneration.current;
       try {
         const response = await fetch(
@@ -74,11 +80,14 @@ export default function DriverHome() {
     setNotice("");
     setBusy(true);
     try {
-      const response = await fetch(`${apiUrl}/driver/${next ? "online" : "offline"}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ driverId }),
-      });
+      const response = await fetch(
+        `${apiUrl}/driver/${next ? "online" : "offline"}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ driverId }),
+        },
+      );
       const data = await readJson(response);
       if (!response.ok) {
         throw new Error(data.error ?? "Could not update driver");
@@ -100,11 +109,14 @@ export default function DriverHome() {
     setError("");
     setNotice("");
     try {
-      const response = await fetch(`${apiUrl}/order/${order.orderId}/${action}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ driverId }),
-      });
+      const response = await fetch(
+        `${apiUrl}/order/${order.orderId}/${action}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ driverId }),
+        },
+      );
       const data = await readJson(response);
       if (!response.ok) {
         throw new Error(data.error ?? `Could not ${action} order`);
@@ -126,23 +138,33 @@ export default function DriverHome() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-4 font-sans dark:bg-black">
-      <main className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-        <Link
-          href="/"
-          className="mb-4 inline-block text-sm text-green-700 hover:underline dark:text-green-400"
-        >
-          Customer order
-        </Link>
-        <h1 className="mb-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-          Driver offer
-        </h1>
-        <p className="mb-6 text-sm text-zinc-500">
-          Go online to receive one order. Deny sends it to the next driver. Use driver-2 in
-          another window to catch a pass.
+    <AppShell>
+      <section className="rounded-3xl border border-line bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-carrot">Shopper</p>
+            <h1 className="mt-1 text-3xl font-bold tracking-tight">
+              Driver offer
+            </h1>
+          </div>
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
+              online
+                ? "bg-[#E7F6E7] text-ic-green-dark"
+                : "bg-[#F2F3F4] text-muted"
+            }`}
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${online ? "bg-ic-green" : "bg-[#B0B3B8]"}`}
+            />
+            {online ? "Online" : "Offline"}
+          </span>
+        </div>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          Go online to receive available orders.
         </p>
 
-        <label className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <label className="mt-6 mb-2 block text-sm font-semibold">
           Driver id
         </label>
         <input
@@ -150,37 +172,48 @@ export default function DriverHome() {
           value={driverId}
           onChange={(e) => setDriverId(e.target.value)}
           disabled={online || busy}
-          className="mb-4 w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 outline-none focus:border-green-500 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+          className="w-full rounded-xl border border-line bg-white px-3.5 py-3 text-foreground outline-none focus:border-ic-green focus:ring-2 focus:ring-[#0AAD0A]/20 disabled:bg-[#F7F8F8] disabled:opacity-70"
         />
 
         <button
           onClick={() => setAvailability(!online)}
           disabled={busy || !driverId.trim()}
-          className="mb-6 w-full rounded-lg bg-zinc-900 py-2.5 font-medium text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+          className={`mt-4 w-full rounded-full py-3 font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${
+            online
+              ? "border border-line bg-white text-foreground hover:bg-[#F7F8F8]"
+              : "bg-ic-green text-white hover:bg-ic-green-dark"
+          }`}
         >
           {online ? "Go offline" : "Go online"}
         </button>
 
         {online && !order && (
-          <p className="text-sm text-zinc-500">You are online. Waiting for the next order.</p>
+          <p className="mt-5 text-sm text-muted">
+            You are online. Waiting for the next order.
+          </p>
         )}
 
         {order && (
-          <div className="rounded-lg border border-zinc-200 px-3 py-3 text-sm text-zinc-800 dark:border-zinc-800 dark:text-zinc-200">
-            <p className="font-medium">{order.customerName ?? "Customer"}</p>
-            <p className="text-zinc-500">Order {order.orderId}</p>
-            <div className="mt-3 flex gap-2">
+          <div className="mt-5 rounded-2xl border border-[#FFE0C7] bg-[#FFF8F3] p-4 text-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-carrot">
+              New offer
+            </p>
+            <p className="mt-1 text-base font-semibold">
+              {order.customerName ?? "Customer"}
+            </p>
+            <p className="text-muted">Order {order.orderId}</p>
+            <div className="mt-4 flex gap-2">
               <button
                 onClick={() => decide("accept")}
                 disabled={busy}
-                className="flex-1 rounded-lg bg-green-600 py-2 font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 rounded-full bg-ic-green py-2.5 font-semibold text-white hover:bg-ic-green-dark disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Accept
               </button>
               <button
                 onClick={() => decide("deny")}
                 disabled={busy}
-                className="flex-1 rounded-lg border border-zinc-300 py-2 font-medium text-zinc-800 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-900"
+                className="flex-1 rounded-full border border-line bg-white py-2.5 font-semibold text-foreground hover:bg-[#F7F8F8] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Deny
               </button>
@@ -189,17 +222,17 @@ export default function DriverHome() {
         )}
 
         {notice && (
-          <p className="mt-4 rounded-lg bg-green-50 p-3 text-sm text-green-800 dark:bg-green-950 dark:text-green-200">
+          <p className="mt-4 rounded-2xl bg-[#E7F6E7] p-3 text-sm text-ic-green-dark">
             {notice}
           </p>
         )}
 
         {error && (
-          <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+          <p className="mt-4 rounded-2xl bg-red-50 p-3 text-sm text-red-700">
             {error}
           </p>
         )}
-      </main>
-    </div>
+      </section>
+    </AppShell>
   );
 }

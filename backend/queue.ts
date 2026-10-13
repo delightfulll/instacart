@@ -37,11 +37,14 @@ export async function enqueueOrder(orderId: string): Promise<void> {
   console.log("Message sent to dispatch queue", orderId, "message ID", result.MessageId);
 }
 
+export const PASSED_DELAY_SECONDS = 3; // how long a denied order waits before the next driver sees it
+
 // Copies a denied order onto the passed queue so the next driver is offered it first.
 export async function enqueuePassedOrder(orderId: string, declinedBy: string[]): Promise<void> {
   const result = await client.send(
     new SendMessageCommand({
       QueueUrl: getPassedQueueUrl(),
+      DelaySeconds: PASSED_DELAY_SECONDS, // message stays invisible for 3s, then the worker can receive it
       // declinedBy is for the SQS console. The worker reads the list off the order row.
       MessageBody: JSON.stringify({ orderId, declinedBy }),
     })
