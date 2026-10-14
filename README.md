@@ -1,6 +1,10 @@
-# Order Dispatch
+# Order Dispatch System
 
-Event-driven order dispatch on AWS: place an order, persist it, queue it, offer it to one online driver, then notify if they accept.
+## View the Demo Here
+
+https://github.com/user-attachments/assets/a1b23ab0-6694-4661-be01-880e8d82cb8e
+
+Event-driven order dispatch on AWS: place an order, persist it, queue it, offer it to one online driver, then notify if they accept. The backend ships through a **Jenkins CI/CD pipeline** to **Amazon ECR** and **Amazon ECS**, so a commit becomes a running deployment without manual steps.
 
 This is a learning project for applied AWS (Solutions Architect Associate). It is a **dispatch slice**, not a full marketplace (no catalog, cart, or payments).
 
@@ -14,6 +18,8 @@ The app uses the same building blocks as production systems:
 - **SQS** — new orders land on a dispatch queue; a deny copies the message to a second queue
 - **SNS** — publish when a driver accepts (email subscription)
 - **SQS visibility timeout** — while a driver decides, the message stays invisible. If nobody is online, the worker releases it and tries again
+- **ECR + ECS** — the backend image is stored in Amazon ECR and runs as a service on an Amazon ECS cluster
+- **Jenkins CI/CD** — a `Jenkinsfile` builds, pushes, and deploys the backend automatically (see [CI/CD pipeline](#cicd-pipeline-jenkins--ecr--ecs))
 
 ## Architecture
 
@@ -51,9 +57,12 @@ Standard SQS does not guarantee oldest-first order. "Next" means the next messag
 | API        | Express, TypeScript                                        |
 | Worker     | Node process polling SQS                                   |
 | Data       | Amazon DynamoDB                                            |
-| Queue      | Amazon SQS (standard), dispatch queue and passed queue    |
+| Queue      | Amazon SQS (standard), dispatch queue and passed queue     |
 | Notify     | Amazon SNS                                                 |
 | Containers | Docker image for the backend (API + worker from one image) |
+| Registry   | Amazon ECR (`instacart-api`)                               |
+| Compute    | Amazon ECS (cluster `instacartcluster`)                    |
+| CI/CD      | Jenkins pipeline (`Jenkinsfile`)                           |
 
 ## Repo layout
 
@@ -69,6 +78,7 @@ backend/db/orders.ts      DynamoDB order CRUD
 backend/db/drivers.ts     DynamoDB drivers
 backend/scripts/setup-aws.ts   Create tables + seed driver-1 and driver-2
 backend/Dockerfile        Node 22 image, CMD npm start
+Jenkinsfile               CI/CD: build image, push to ECR, deploy to ECS
 ```
 
 ## Local run
@@ -114,6 +124,38 @@ docker build -t instacart-backend .
 docker run --rm -p 3001:3001 --env-file .env -v "$HOME/.aws:/root/.aws:ro" instacart-backend
 ```
 
+## CI/CD pipeline (Jenkins → ECR → ECS)
+
+The `Jenkinsfile` at the repo root automates the whole path from commit to running container:
+
+```
+Git push
+  → Jenkins
+    1. Checkout        pull the repo on the Jenkins agent
+    2. Login to ECR    aws ecr get-login-password | docker login
+    3. Build           docker buildx build --platform linux/amd64, tagged :BUILD_NUMBER and :latest, pushed to ECR
+    4. Push (verify)   docker buildx imagetools inspect confirms the tag exists in ECR
+    5. Deploy to ECS   copy the live task definition, swap in the new image tag,
+                       register a new revision, update the service with --force-new-deployment
+  → ECS starts new tasks on the new image and replaces the old ones
+```
+
+What this gives you:
+
+- **Repeatable builds** — every image is tagged with the Jenkins build number, so any deployment can be traced to a specific build and rolled back by pointing the service at an earlier task definition revision.
+- **No manual deploys** — no hand-run `docker push` or console clicks; the pipeline registers the task definition revision and updates the service.
+- **Consistent platform** — images are built for `linux/amd64` to match the ECS task runtime, even when built from an Apple Silicon machine.
+- **Config preserved** — the new task definition is derived from the one currently running, so environment variables, roles, and logging settings carry over.
+
+| Setting     | Value                       |
+| ----------- | --------------------------- |
+| Region      | `us-east-1`                 |
+| ECR repo    | `instacart-api`             |
+| ECS cluster | `instacartcluster`          |
+| Pipeline    | `Jenkinsfile` (declarative) |
+
+The Jenkins agent needs Docker with `buildx`, the AWS CLI, Python 3, and an IAM identity that can push to ECR and call `ecs:DescribeServices`, `ecs:DescribeTaskDefinition`, `ecs:RegisterTaskDefinition`, `ecs:UpdateService`, and `iam:PassRole` for the task roles.
+
 ## AWS resources
 
 | Resource | Name                                |
@@ -123,5 +165,5 @@ docker run --rm -p 3001:3001 --env-file .env -v "$HOME/.aws:/root/.aws:ro" insta
 | SQS      | `order-dispatch-queue`              |
 | SQS      | `order-passed-queue`                |
 | SNS      | `order-status-updates`              |
-
-IAM for local: credentials from `aws configure`.
+| ECR      | `instacart-api`                     |
+| ECS      | cluster `instacartcluster`          |
