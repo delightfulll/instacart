@@ -6,7 +6,6 @@ https://github.com/user-attachments/assets/a1b23ab0-6694-4661-be01-880e8d82cb8e
 
 Event-driven order dispatch on AWS: place an order, persist it, queue it, offer it to one online driver, then notify if they accept. The backend ships through a **Jenkins CI/CD pipeline** to **Amazon ECR** and **Amazon ECS**, so a commit becomes a running deployment without manual steps.
 
-This is a learning project for applied AWS (Solutions Architect Associate). It is a **dispatch slice**, not a full marketplace (no catalog, cart, or payments).
 
 ## Why this project
 
